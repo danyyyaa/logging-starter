@@ -3,7 +3,7 @@ plugins {
     id 'maven-publish'
 }
 
-group = 'com.danya.loggingstarter'
+group = 'com.danya'
 version = '1.0-SNAPSHOT'
 
 java.sourceCompatibility = JavaVersion.VERSION_21
