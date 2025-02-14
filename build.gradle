@@ -1,6 +1,6 @@
 plugins {
     id 'java'
-
+    id 'maven-publish'
 }
 
 group = 'com.danya.loggingstarter'
@@ -15,3 +15,18 @@ repositories {
 
 dependencies {
 }
+
+publishing {
+    publications {
+        maven (MavenPublication) {
+            from components.java
+        }
+    }
+
+    repositories {
+        maven {
+            url = "file://${project.projectDir.toString()}/maven-repo/"
+        }
+    }
+}
+
