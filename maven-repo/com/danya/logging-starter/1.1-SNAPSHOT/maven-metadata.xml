@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<metadata modelVersion="1.1.0">
+  <groupId>com.danya</groupId>
+  <artifactId>logging-starter</artifactId>
+  <versioning>
+    <lastUpdated>20250214035408</lastUpdated>
+    <snapshot>
+      <timestamp>20250214.035408</timestamp>
+      <buildNumber>2</buildNumber>
+    </snapshot>
+    <snapshotVersions>
+      <snapshotVersion>
+        <extension>jar</extension>
+        <value>1.1-20250214.035408-2</value>
+        <updated>20250214035408</updated>
+      </snapshotVersion>
+      <snapshotVersion>
+        <extension>module</extension>
+        <value>1.1-20250214.035408-2</value>
+        <updated>20250214035408</updated>
+      </snapshotVersion>
+      <snapshotVersion>
+        <extension>pom</extension>
+        <value>1.1-20250214.035408-2</value>
+        <updated>20250214035408</updated>
+      </snapshotVersion>
+    </snapshotVersions>
+  </versioning>
+  <version>1.1-SNAPSHOT</version>
+</metadata>
