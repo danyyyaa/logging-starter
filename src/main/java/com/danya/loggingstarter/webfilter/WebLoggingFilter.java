@@ -39,7 +39,12 @@ public class WebLoggingFilter extends HttpFilter {
             throws IOException, ServletException {
         String method = request.getMethod();
         String requestUri = request.getRequestURI() + formatQueryString(request);
-        String headers = inlineHeaders(request);
+
+        List<String> maskHeaders = loggingExclusionProperties != null
+                ? loggingExclusionProperties.getMaskHeaders()
+                : Collections.emptyList();
+
+        String headers = inlineHeaders(request, maskHeaders);
 
         List<String> excludePaths = loggingExclusionProperties != null
                 ? loggingExclusionProperties.getExcludePaths()
@@ -69,11 +74,11 @@ public class WebLoggingFilter extends HttpFilter {
         }
     }
 
-    private String inlineHeaders(HttpServletRequest request) {
+    private String inlineHeaders(HttpServletRequest request, List<String> maskHeaders) {
         Map<String, String> headersMap = Collections.list(request.getHeaderNames()).stream()
                 .collect(Collectors.toMap(it -> it, request::getHeader));
 
-        HeaderMaskingUtil.maskHeaders(headersMap);
+        HeaderMaskingUtil.maskHeaders(headersMap, maskHeaders);
         String inlineHeaders = headersMap.entrySet().stream()
                 .map(entry -> entry.getKey() + "=" + entry.getValue())
                 .collect(Collectors.joining(","));

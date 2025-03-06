@@ -7,6 +7,16 @@ public class LoggingExclusionProperties {
 
     private List<String> excludePaths;
     private List<String> maskFields;
+    private List<String> maskHeaders;
+
+
+    public List<String> getMaskHeaders() {
+        return new ArrayList<>(maskHeaders);
+    }
+
+    public void setMaskHeaders(List<String> maskHeaders) {
+        this.maskHeaders = maskHeaders;
+    }
 
     public List<String> getExcludePaths() {
         return new ArrayList<>(excludePaths);
