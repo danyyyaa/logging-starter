@@ -4,7 +4,7 @@ plugins {
 }
 
 group = 'com.danya'
-version = '1.1-SNAPSHOT'
+version = '1.2-SNAPSHOT'
 
 java.sourceCompatibility = JavaVersion.VERSION_21
 java.targetCompatibility = JavaVersion.VERSION_21
@@ -13,12 +13,17 @@ repositories {
     mavenCentral()
 }
 
+def springVersion = "3.2.5"
+
 dependencies {
+    implementation "org.springframework.boot:spring-boot-starter-web:${springVersion}"
+    implementation "org.springframework.boot:spring-boot-starter-aop:${springVersion}"
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.15.4'
 }
 
 publishing {
     publications {
-        maven (MavenPublication) {
+        maven(MavenPublication) {
             from components.java
         }
     }
