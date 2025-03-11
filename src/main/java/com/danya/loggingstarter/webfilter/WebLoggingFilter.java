@@ -2,9 +2,7 @@ package com.danya.loggingstarter.webfilter;
 
 import com.danya.loggingstarter.property.LoggingExclusionProperties;
 import com.danya.loggingstarter.util.HeaderMaskingUtil;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.danya.loggingstarter.util.JsonMaskingUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpFilter;
@@ -14,12 +12,12 @@ import org.apache.logging.log4j.util.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.util.AntPathMatcher;
 import org.springframework.web.util.ContentCachingResponseWrapper;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -32,46 +30,39 @@ public class WebLoggingFilter extends HttpFilter {
     @Autowired(required = false)
     private LoggingExclusionProperties loggingExclusionProperties;
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    @Autowired
+    private AntPathMatcher matcher;
+
+    @Autowired
+    private JsonMaskingUtil jsonMaskingUtil;
 
     @Override
-    protected void doFilter(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
-            throws IOException, ServletException {
-        String method = request.getMethod();
-        String requestUri = request.getRequestURI() + formatQueryString(request);
-
-        List<String> maskHeaders = loggingExclusionProperties != null
-                ? loggingExclusionProperties.getMaskHeaders()
-                : Collections.emptyList();
-
-        String headers = inlineHeaders(request, maskHeaders);
-
-        List<String> excludePaths = loggingExclusionProperties != null
-                ? loggingExclusionProperties.getExcludePaths()
-                : Collections.emptyList();
-
-        if (excludePaths.stream().anyMatch(requestUri::startsWith)) {
+    protected void doFilter(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws IOException, ServletException {
+        if (isExcludedRequest(request.getRequestURI() + formatQueryString(request))) {
             chain.doFilter(request, response);
             return;
         }
 
-        log.info("Запрос: {} {} {}", method, requestUri, headers);
-
-        ContentCachingResponseWrapper responseWrapper = new ContentCachingResponseWrapper(response);
-
+        logRequest(request.getMethod(), request.getRequestURI() + formatQueryString(request), request);
+        ContentCachingResponseWrapper wrapper = new ContentCachingResponseWrapper(response);
         try {
-            super.doFilter(request, responseWrapper, chain);
-
-            String responseBody = new String(responseWrapper.getContentAsByteArray(), StandardCharsets.UTF_8);
-            if (loggingExclusionProperties != null) {
-                responseBody = maskJsonFields(responseBody, loggingExclusionProperties.getMaskFields());
-            }
-            log.info("Ответ: {} {} {} {}", method, requestUri, response.getStatus(), responseBody);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+            super.doFilter(request, wrapper, chain);
+            logResponse(
+                    request.getMethod(),
+                    request.getRequestURI() + formatQueryString(request),
+                    wrapper,
+                    new String(wrapper.getContentAsByteArray(), StandardCharsets.UTF_8),
+                    (loggingExclusionProperties != null) ? loggingExclusionProperties.getMaskFields() : null
+            );
         } finally {
-            responseWrapper.copyBodyToResponse();
+            wrapper.copyBodyToResponse();
         }
+    }
+
+    private boolean isExcludedRequest(String requestUri) {
+        return loggingExclusionProperties != null
+                && loggingExclusionProperties.getExcludePaths().stream()
+                .anyMatch(pattern -> matcher.match(pattern, requestUri));
     }
 
     private String inlineHeaders(HttpServletRequest request, List<String> maskHeaders) {
@@ -92,33 +83,21 @@ public class WebLoggingFilter extends HttpFilter {
                 .orElse(Strings.EMPTY);
     }
 
-    private String maskJsonFields(String json, List<String> maskFields) {
-        try {
-            JsonNode root = objectMapper.readTree(json);
-            maskJsonNode(root, maskFields);
-            return objectMapper.writeValueAsString(root);
-        } catch (Exception e) {
-            log.error("Ошибка при маскировке полей JSON", e);
-            return json;
-        }
+    private void logRequest(String method, String requestUri, HttpServletRequest request) {
+        List<String> maskHeaders = (loggingExclusionProperties != null)
+                ? loggingExclusionProperties.getMaskHeaders()
+                : Collections.emptyList();
+
+        String headers = inlineHeaders(request, maskHeaders);
+        log.info("Запрос: {} {} {}", method, requestUri, headers);
     }
 
-    private void maskJsonNode(JsonNode node, List<String> maskFields) {
-        if (node.isObject()) {
-            ObjectNode objectNode = (ObjectNode) node;
-            Iterator<Map.Entry<String, JsonNode>> fields = objectNode.fields();
-            while (fields.hasNext()) {
-                Map.Entry<String, JsonNode> entry = fields.next();
-                if (maskFields.contains(entry.getKey())) {
-                    objectNode.put(entry.getKey(), "****");
-                } else {
-                    maskJsonNode(entry.getValue(), maskFields);
-                }
-            }
-        } else if (node.isArray()) {
-            for (JsonNode arrayItem : node) {
-                maskJsonNode(arrayItem, maskFields);
-            }
+    private void logResponse(String method, String requestUri,
+                             HttpServletResponse response,
+                             String responseBody, List<String> maskFields) {
+        if (loggingExclusionProperties != null && maskFields != null) {
+            responseBody = jsonMaskingUtil.maskFields(responseBody, maskFields);
         }
+        log.info("Ответ: {} {} {} {}", method, requestUri, response.getStatus(), responseBody);
     }
 }

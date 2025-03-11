@@ -1,6 +1,5 @@
 package com.danya.loggingstarter.property;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class LoggingExclusionProperties {
@@ -11,7 +10,7 @@ public class LoggingExclusionProperties {
 
 
     public List<String> getMaskHeaders() {
-        return new ArrayList<>(maskHeaders);
+        return maskHeaders;
     }
 
     public void setMaskHeaders(List<String> maskHeaders) {
@@ -19,7 +18,7 @@ public class LoggingExclusionProperties {
     }
 
     public List<String> getExcludePaths() {
-        return new ArrayList<>(excludePaths);
+        return excludePaths;
     }
 
     public void setExcludePaths(List<String> excludePaths) {
@@ -27,7 +26,7 @@ public class LoggingExclusionProperties {
     }
 
     public List<String> getMaskFields() {
-        return new ArrayList<>(maskFields);
+        return maskFields;
     }
 
     public void setMaskFields(List<String> maskFields) {

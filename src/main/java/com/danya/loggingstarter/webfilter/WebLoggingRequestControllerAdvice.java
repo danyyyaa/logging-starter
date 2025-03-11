@@ -2,8 +2,8 @@ package com.danya.loggingstarter.webfilter;
 
 import com.danya.loggingstarter.property.LoggingExclusionProperties;
 import com.danya.loggingstarter.util.JsonMaskingUtil;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import jakarta.servlet.http.HttpServletRequest;
 import org.apache.logging.log4j.util.Strings;
 import org.slf4j.Logger;
@@ -22,46 +22,63 @@ import java.util.Optional;
 public class WebLoggingRequestControllerAdvice extends RequestBodyAdviceAdapter {
 
     private static final Logger log = LoggerFactory.getLogger(WebLoggingRequestControllerAdvice.class);
-    private static final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @Autowired
     private HttpServletRequest request;
+
+    @Autowired
+    private JsonMaskingUtil jsonMaskingUtil;
 
     @Autowired(required = false)
     private LoggingExclusionProperties loggingExclusionProperties;
 
     @Override
-    public Object afterBodyRead(Object body, HttpInputMessage inputMessage, MethodParameter parameter, Type targetType, Class<? extends HttpMessageConverter<?>> converterType) {
+    public Object afterBodyRead(Object body, HttpInputMessage inputMessage, MethodParameter parameter, Type targetType,
+                                Class<? extends HttpMessageConverter<?>> converterType) {
         String method = request.getMethod();
         String requestUri = request.getRequestURI() + formatQueryString(request);
 
-        boolean condition = loggingExclusionProperties != null
+        boolean isExcludedPath = loggingExclusionProperties != null
                 && loggingExclusionProperties.getExcludePaths().stream().anyMatch(requestUri::startsWith);
-        if (condition) {
+        if (isExcludedPath) {
             return super.afterBodyRead(body, inputMessage, parameter, targetType, converterType);
         }
 
+        String bodyJson;
         try {
-            String bodyJson = objectMapper.writeValueAsString(body);
-            if (loggingExclusionProperties != null) {
-                bodyJson = JsonMaskingUtil.maskFields(bodyJson, loggingExclusionProperties.getMaskFields());
-            }
-            log.info("Тело запроса: {} {} {}", method, requestUri, bodyJson);
-        } catch (Exception e) {
-            log.error("Ошибка маскирования полей в json", e);
+            bodyJson = objectMapper.writeValueAsString(body);
+        } catch (JsonProcessingException e) {
+            log.error("Ошибка сериализации тела запроса", e);
+            throw new RuntimeException("Ошибка сериализации тела запроса", e);
         }
+
+        if (loggingExclusionProperties != null) {
+            bodyJson = jsonMaskingUtil.maskFields(bodyJson, loggingExclusionProperties.getMaskFields());
+        }
+        log.info("Тело запроса: {} {} {}", method, requestUri, bodyJson);
 
         return super.afterBodyRead(body, inputMessage, parameter, targetType, converterType);
     }
 
     @Override
     public boolean supports(MethodParameter methodParameter, Type targetType, Class<? extends HttpMessageConverter<?>> converterType) {
-        return true;
+        String requestUri = request.getRequestURI() + formatQueryString(request);
+        return !isExcludedPath(requestUri);
     }
 
     private String formatQueryString(HttpServletRequest request) {
         return Optional.ofNullable(request.getQueryString())
                 .map(qs -> "=" + qs)
                 .orElse(Strings.EMPTY);
+    }
+
+    private boolean isExcludedPath(String requestUri) {
+        if (loggingExclusionProperties == null) {
+            return false;
+        }
+        return loggingExclusionProperties.getExcludePaths().stream().anyMatch(requestUri::startsWith);
     }
 }
