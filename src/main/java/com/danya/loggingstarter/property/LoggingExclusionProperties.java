@@ -8,7 +8,6 @@ public class LoggingExclusionProperties {
     private List<String> maskFields;
     private List<String> maskHeaders;
 
-
     public List<String> getMaskHeaders() {
         return maskHeaders;
     }
