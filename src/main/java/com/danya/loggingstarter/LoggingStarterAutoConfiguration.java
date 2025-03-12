@@ -2,6 +2,7 @@ package com.danya.loggingstarter;
 
 import com.danya.loggingstarter.aspect.LogExecutionAspect;
 import com.danya.loggingstarter.property.LoggingExclusionProperties;
+import com.danya.loggingstarter.util.HeaderMaskingUtil;
 import com.danya.loggingstarter.util.JsonMaskingUtil;
 import com.danya.loggingstarter.webfilter.WebLoggingFilter;
 import com.danya.loggingstarter.webfilter.WebLoggingRequestControllerAdvice;
@@ -38,7 +39,6 @@ public class LoggingStarterAutoConfiguration {
 
     @Bean
     @ConfigurationProperties(prefix = "logging.exclude-paths")
-    @ConditionalOnProperty(prefix = "logging.exclude-paths", value = "enabled", havingValue = "true")
     public LoggingExclusionProperties loggingExclusionProperties() {
         return new LoggingExclusionProperties();
     }
@@ -60,5 +60,10 @@ public class LoggingStarterAutoConfiguration {
     @Bean
     public AntPathMatcher antPathMatcher() {
         return new AntPathMatcher();
+    }
+
+    @Bean
+    public HeaderMaskingUtil headerMaskingUtil() {
+        return new HeaderMaskingUtil();
     }
 }
