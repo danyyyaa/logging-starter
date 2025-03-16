@@ -42,9 +42,7 @@ public class JsonMaskingUtil {
 
             maskFields.forEach(rawFields -> {
                 try {
-                    String fieldName = cleanJsonPath(rawFields);
-                    String jsonPath = "$.." + fieldName;
-                    context.map(jsonPath, (o, cfg) -> MASKED_VALUE);
+                    context.map(rawFields, (o, cfg) -> MASKED_VALUE);
                 } catch (PathNotFoundException e) {
                     // Путь не найден, пропускаем
                 }
@@ -55,20 +53,6 @@ public class JsonMaskingUtil {
             log.warn("Ошибка маскирования полей в json", e);
             return json;
         }
-    }
-
-    private String cleanJsonPath(String rawFields) {
-        String cleaned = rawFields.replaceAll("<[^>]+>", "").trim();
-
-        if (cleaned.startsWith("$.")) {
-            cleaned = cleaned.substring(2);
-        } else if (cleaned.startsWith("$")) {
-            cleaned = cleaned.substring(1);
-        }
-
-        return cleaned.contains(".")
-                ? cleaned.substring(cleaned.lastIndexOf('.') + 1)
-                : cleaned;
     }
 
     private String convertBodyToJson(Object body) {
