@@ -51,8 +51,8 @@ public class WebLoggingFilter extends HttpFilter {
         Map<String, String> headersMap = Collections.list(request.getHeaderNames()).stream()
                 .collect(Collectors.toMap(it -> it, request::getHeader));
 
-        headerMaskingUtil.maskHeaders(headersMap);
-        String inlineHeaders = headersMap.entrySet().stream()
+        Map<String, String> maskedHeaders = headerMaskingUtil.getMaskedHeaders(headersMap);
+        String inlineHeaders = maskedHeaders.entrySet().stream()
                 .map(entry -> entry.getKey() + "=" + entry.getValue())
                 .collect(Collectors.joining(","));
 
