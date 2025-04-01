@@ -18,6 +18,8 @@ def springVersion = "3.2.5"
 dependencies {
     implementation "org.springframework.boot:spring-boot-starter-web:${springVersion}"
     implementation "org.springframework.boot:spring-boot-starter-aop:${springVersion}"
+    implementation 'org.springframework.cloud:spring-cloud-starter-openfeign:4.1.4'
+
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.15.4'
     implementation group: 'com.jayway.jsonpath', name: 'json-path', version: '2.9.0'
 }
