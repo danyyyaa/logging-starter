@@ -1,11 +1,14 @@
 package com.danya.loggingstarter;
 
 import com.danya.loggingstarter.aspect.LogExecutionAspect;
+import com.danya.loggingstarter.feign.FeignRequestLogger;
 import com.danya.loggingstarter.property.LoggingExclusionProperties;
+import com.danya.loggingstarter.service.LoggingService;
 import com.danya.loggingstarter.util.HeaderMaskingUtil;
 import com.danya.loggingstarter.util.JsonMaskingUtil;
 import com.danya.loggingstarter.webfilter.WebLoggingFilter;
 import com.danya.loggingstarter.webfilter.WebLoggingRequestControllerAdvice;
+import feign.Logger;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -48,4 +51,22 @@ public class LoggingStarterAutoConfiguration {
     public HeaderMaskingUtil headerMaskingUtil() {
         return new HeaderMaskingUtil();
     }
+
+    @Bean
+    public LoggingService loggingService() {
+        return new LoggingService();
+    }
+
+    @Bean
+    @ConditionalOnProperty(prefix = "logging.web-logging", value = "log-feign-requests", havingValue = "true")
+    public FeignRequestLogger feignRequestLogger() {
+        return new FeignRequestLogger();
+    }
+
+    @Bean
+    @ConditionalOnProperty(prefix = "logging.web-logging", value = "log-feign-requests", havingValue = "true")
+    public Logger.Level feignLoggerLevel() {
+        return Logger.Level.BASIC;
+    }
 }
+
